@@ -1,0 +1,11 @@
+pandas
+numpy
+matplotlib
+seaborn
+textblob
+nltk
+yfinance
+pynance @ git+https://github.com/mqandil/pynance.git
+scikit-learn
+jupyterlab
+ta-lib

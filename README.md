@@ -23,17 +23,24 @@ Activities: Date alignment and normalization, conducting sentiment analysis on h
 
 # Recreate on your machine
 ```
-git clone
+git clone https://github.com/AffableMelon/news-sentiment-stock-forecasting
 ```
 
 ```
-cd 
+cd news-sentiment-stock-forecasting
 
 ```
-# Create and activate a virtual environment (optional but recommended)
+# Create and activate a virtual environment 
+Create virtual env
+```
 python3 -m venv venv
+
+```
+Activate it
+```
 source venv/bin/activate  # On Linux/macOS
 .\venv\Scripts\activate   # On Windows
 
+```
 # Install dependencies
 pip install -r req.txt

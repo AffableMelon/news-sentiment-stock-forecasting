@@ -1,0 +1,7 @@
+data
+.venv/
+venv/
+env/
+.env
+*.csv
+*.ipynb_checkpoints

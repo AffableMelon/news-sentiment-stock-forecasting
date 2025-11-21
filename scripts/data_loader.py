@@ -7,7 +7,7 @@ def load_news_csv(path: str) -> pd.DataFrame:
     """
     df = pd.read_csv(path)
     # Strip whitespace
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
     # Parse date column
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
 

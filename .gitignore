@@ -2,6 +2,7 @@ data
 .venv/
 venv/
 env/
+__pycache__/
 .env
 *.csv
 *.ipynb_checkpoints

@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional, Sequence, Union
-
+import re
 import pandas as pd
 
 
@@ -21,25 +21,46 @@ class DataLoader:
         return df
 
     def load_news_csv(
-        self, path: Union[str, Path], date_col: str = "date"
+        self,
+        path: Union[str, Path],
+        date_col: str = "date",
+        naive_timezone: str = "UTC",
     ) -> pd.DataFrame:
-        """
-        Loads the raw news dataset and performs basic cleaning.
-        - Strips whitespace from string cells
-        - Standardizes column names (trim + lowercase)
-        - Parses date column if present
-        - Drops fully empty rows
-        """
         df = pd.read_csv(path)
         df = self._strip_whitespace(df)
-        df = self._standardize_columns(df, lowercase=True)
+        df = self._standardize_columns(df, lowercase=False)
 
-        if date_col.lower() in df.columns:
-            df[date_col.lower()] = pd.to_datetime(df[date_col.lower()], errors="coerce")
+        lower_map = {c.lower(): c for c in df.columns}
+        target = date_col.lower()
+        if target in lower_map:
+            real_col = lower_map[target]
+            raw = df[real_col].astype(str).str.strip()
+            offset_pattern = re.compile(r".*[+-]\d{2}:\d{2}$")
 
-        # remove fully empty rows
+            def _parse_one(s: str):
+                if s == "" or s.lower() in ("nan", "none"):
+                    return pd.NaT
+                try:
+                    if offset_pattern.match(s):
+                        return pd.to_datetime(s, utc=True)
+                    else:
+                        dt = pd.to_datetime(s, utc=False)
+                        if dt.tzinfo is None:
+                            return dt.tz_localize(naive_timezone)
+                        return dt.tz_convert("UTC")
+                except Exception:
+                    return pd.NaT
+
+            parsed = raw.apply(_parse_one)
+
+            try:
+                parsed = parsed.dt.tz_convert("UTC")
+            except Exception:
+                pass
+
+            df[real_col] = parsed
+
         df = df.dropna(how="all")
-
         return df
 
     def load_stock_price(
@@ -92,6 +113,32 @@ class DataLoader:
 
 
 if __name__ == "__main__":
+    from io import StringIO
+
+    data = """date
+    2020-06-03 10:45:20-04:00
+    2020-05-26 04:30:07-04:00
+    2020-05-22 12:45:06-04:00
+    2020-05-22 11:38:59-04:00
+    2020-05-22 11:23:25-04:00
+    2020-05-22 09:36:20-04:00
+    2020-05-22 09:07:04-04:00
+    2020-05-22 09:37:59-04:00
+    2020-05-22 08:06:17-04:00
+    2020-05-22 00:00:00
+    2020-05-21 00:00:00
+    2020-05-15 00:00:00
+    """
+    df_raw = pd.read_csv(StringIO(data))
+
+    print("\n--- RAW CSV READ ---")
+    print(df_raw)
+
     loader = DataLoader()
-    df = loader.load_stock_price("../src/data/AAPL.csv")
-    print(df.columns)
+    news_df = loader.load_news_csv(
+        # for demo; normally pass a filepath
+        path="../src/data/raw_analyst_ratings.csv",
+        date_col="date",
+    )
+    print("\n--- LOADER PARSED NEWS DF ---")
+    print(news_df.tail())
